@@ -554,10 +554,16 @@ class MakeGTFSGISData(object):
     
 #=======================RUN FUNCTIONS======================================
 if __name__ == '__main__':
+    # folder containing GTFS text files
     gtfs_folder = r'Q:\SACSIM19\2020MTP\transit\Sidewalk Labs\OperatorData_SWL\Unitrans\2020_3Summer\SprFinalsSS12020_UnitransV1'
-    gis_fgdb = r'I:\Projects\Darren\CMPs\CMP2020\CMP_2020GIS\scratch.gdb'
-    year = 'Summer2019'
     
+    # ESRI file geodatabase you want output files to appear in
+    gis_fgdb = r'I:\Projects\Darren\CMPs\CMP2020\CMP_2020GIS\scratch.gdb'
+    
+    # Year flag only used in output feature class and file names, not used for any calculations
+    year = 'Summer2019' 
+    
+    # Parameters to determine what time of day you want to summarize service for
     start_time = '07:00:00' # starting at or after this time
     end_time = '08:59:00' # and ending before this time
     
