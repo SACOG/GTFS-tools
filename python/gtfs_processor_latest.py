@@ -1,12 +1,19 @@
 """
-Name: make_gtfs_lines.py
-Purposes/functions:
-    1 - Choose to create either GTFS-based trip lines and stop points
-    2 - create pandas dataframe (exportable to CSV) summarizing transit 
+Name: gtfs_processor_latest.py
+Things you can do with this script:
+    1 - Create GIS point/line layers of stop points and/or trip line shapes 
+        (based on GTFS shapes.txt file)
+    2 - Create pandas dataframe (exportable to CSV) summarizing transit 
         service (e.g. VSH) by line and service type.
+
+    You can also specify whether you want "all day" service represented in outputs,
+    or just specific hours of service (e.g., 7am-9am only)
+
+    As of May 2022, this script does NOT let you specify which days of the week (service_id) you
+    want service captured for.
           
 Author: Darren Conly
-Last Updated: May 2020
+Last Updated: May 2022
 Updated by: <name>
 Copyright:   (c) SACOG
 Python Version: 3.x
@@ -554,21 +561,27 @@ class MakeGTFSGISData(object):
 #=======================RUN FUNCTIONS======================================
 if __name__ == '__main__':
     # folder containing GTFS text files
-    gtfs_folder = r'Q:\SACSIM19\2020MTP\transit\Sidewalk Labs\OperatorData_SWL\SRTD\2020_4Fall\google_transit'
+    gtfs_folder = r'Q:\SACSIM19\2020MTP\transit\Sidewalk Labs\OperatorData_SWL\YoloBus\2019_3Summer\yolocounty-ca-us_eff 7-1-2019'
+    # gtfs_folder = r'Q:\SACSIM19\2020MTP\transit\Sidewalk Labs\OperatorData_SWL\SRTD\2020_4Fall\google_transit'
     
     # ESRI file geodatabase you want output files to appear in
     gis_fgdb = r'Q:\SACSIM23\Network\SM23GIS\SM23Testing.gdb'
     
     # Year flag only used in output feature class and file names, not used for any calculations
+    # No specific format needed, but be as concise as possible
     year = 'Fall2020' 
     
     # Parameters to determine what time of day you want to summarize service for
-    start_time = '15:00:00' # starting at or after this time
+    # Enter as 'hh:mm:ss' using 24-hour time
+    # If you are using all day service, you do not have to edit these parameters.
+    start_time = '15:00:00' # starting at or after this time 
     end_time = '17:59:00' # and ending before this time
     
-    use_entire_day = True # instead of getting op data for specified period of day
+    # instead of getting op data for specified period of day
+    # This overrides the start_time and end_time variable values.
+    use_entire_day = True 
 
-    # only applicable if outputting to GIS
+    # only applicable if outputting to GIS. Indicate if you want lines, stops, or both in outputs
     make_trip_shps = True # whether to make GIS lines for each trip shape
     make_stop_pt_shps = True # whether to make GIS point file of operator's stop locations
     
@@ -596,9 +609,9 @@ if __name__ == '__main__':
             gtfso.make_trip_shp()
         if make_stop_pt_shps:
             gtfso.make_stop_pts()
+        print(f"Success! Results are in {gis_fgdb}")
     else:
         df = gtfso.get_prd_opdata(start_time, end_time, use_entire_day, groupby_attrs=['route_id', 'route_short_name', 'shape_id'])
         out_csv = os.path.join(opdir,"gtfs_{}_opdata{}.csv".format(os.path.basename(opdir), f_prdprefix))
         df.to_csv(out_csv, index=False)
-    
-    print("Success!")
+        print(f"Success! Results are in {out_csv}")
