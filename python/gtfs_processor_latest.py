@@ -547,7 +547,6 @@ class MakeGTFSGISData(object):
             print("warning: calendar.txt not found. Output will not contain info on when GTFS data cover.")
             pass
         
-        
         return df_out
         
         
@@ -555,19 +554,23 @@ class MakeGTFSGISData(object):
 #=======================RUN FUNCTIONS======================================
 if __name__ == '__main__':
     # folder containing GTFS text files
-    gtfs_folder = r'Q:\SACSIM19\2020MTP\transit\Sidewalk Labs\OperatorData_SWL\Unitrans\2020_3Summer\SprFinalsSS12020_UnitransV1'
+    gtfs_folder = r'Q:\SACSIM19\2020MTP\transit\Sidewalk Labs\OperatorData_SWL\SRTD\2020_4Fall\google_transit'
     
     # ESRI file geodatabase you want output files to appear in
-    gis_fgdb = r'I:\Projects\Darren\CMPs\CMP2020\CMP_2020GIS\scratch.gdb'
+    gis_fgdb = r'Q:\SACSIM23\Network\SM23GIS\SM23Testing.gdb'
     
     # Year flag only used in output feature class and file names, not used for any calculations
-    year = 'Summer2019' 
+    year = 'Fall2020' 
     
     # Parameters to determine what time of day you want to summarize service for
-    start_time = '07:00:00' # starting at or after this time
-    end_time = '08:59:00' # and ending before this time
+    start_time = '15:00:00' # starting at or after this time
+    end_time = '17:59:00' # and ending before this time
     
-    use_entire_day = False # instead of getting op data for specified period of day
+    use_entire_day = True # instead of getting op data for specified period of day
+
+    # only applicable if outputting to GIS
+    make_trip_shps = True # whether to make GIS lines for each trip shape
+    make_stop_pt_shps = True # whether to make GIS point file of operator's stop locations
     
     #----------BEGIN SCRIPT-----------------
     
@@ -589,8 +592,10 @@ if __name__ == '__main__':
     if output_type not in ('csv', 'gis'):
         raise Exception("Invalid output type. Please enter either 'gis' or 'csv'.")
     elif output_type == 'gis':
-        gtfso.make_trip_shp()
-        gtfso.make_stop_pts()
+        if make_trip_shps:
+            gtfso.make_trip_shp()
+        if make_stop_pt_shps:
+            gtfso.make_stop_pts()
     else:
         df = gtfso.get_prd_opdata(start_time, end_time, use_entire_day, groupby_attrs=['route_id', 'route_short_name', 'shape_id'])
         out_csv = os.path.join(opdir,"gtfs_{}_opdata{}.csv".format(os.path.basename(opdir), f_prdprefix))
