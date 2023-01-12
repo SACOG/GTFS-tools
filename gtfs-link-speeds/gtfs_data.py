@@ -67,7 +67,6 @@ class GTFSData(object):
         self.start_date = 'start_date'
         self.end_date = 'end_date'
 
-        
         # when selecting service types from which to select trips, only get ones that happen on all weekdays
         # ideally need way to get filter out holiday svc, but different operators have difference
         # ways of doing this.
@@ -90,7 +89,8 @@ class GTFSData(object):
         self.df_stoptimes = self.txt_to_df(self.txt_stoptimes) 
 
         # load data with spatial attribs to geodataframes
-        self.gdf_stops = self.txt_to_df(self.txt_stops, f_lat=self.f_stoplat, f_lon=self.f_stoplon)
+        self.gdf_stops = self.txt_to_df(self.txt_stops, f_lat=self.f_stoplat, f_lon=self.f_stoplon,
+                                        set_crs=self.epsg_wgs, transf_crs=self.epsg_sacog)
         if self.use_shapestxt:
             self.gdf_lineshps = self.make_lineshp_gdf()
 
@@ -101,17 +101,24 @@ class GTFSData(object):
         
     
     #=================DEFINE FUNCTIONS=================================
-    def txt_to_df(self, in_txt, usecolumns=None, txt_delim=',', f_lat=None, f_lon=None):
+    def txt_to_df(self, in_txt, usecolumns=None, txt_delim=',', f_lat=None, f_lon=None, set_crs=None,
+                transf_crs=None):
         '''reads in txt or csv file to pandas df'''
         df = pd.read_csv(in_txt, usecols=usecolumns)
 
         if f_lat and f_lon:
             df = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df[f_lon], df[f_lat]))
 
+            if set_crs:
+                df = df.set_crs(epsg=set_crs)
+            if transf_crs:
+                df = df.to_crs(epsg=transf_crs)
+
         return df
 
     def make_lineshp_gdf(self):
-        gdf = self.txt_to_df(self.txt_shapes, f_lat=self.f_pt_lat, f_lon=self.f_pt_lon) # load all shape points to gdf
+        gdf = self.txt_to_df(self.txt_shapes, f_lat=self.f_pt_lat, f_lon=self.f_pt_lon,
+                            set_crs=self.epsg_wgs, transf_crs=self.epsg_sacog) # load all shape points to gdf
         gdf = gdf.sort_values(by=[self.f_shapeid, self.f_pt_seq]) # sort by shape id and point sequence
 
         # import pdb; pdb.set_trace()
