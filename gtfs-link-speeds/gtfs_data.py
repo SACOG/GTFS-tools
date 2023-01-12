@@ -13,6 +13,7 @@ import os
 
 import pandas as pd
 import geopandas as gpd
+from shapely.geometry import LineString
 
 class GTFSData(object):
     
@@ -31,17 +32,6 @@ class GTFSData(object):
         self.txt_stoptimes = 'stop_times.txt'
         self.txt_shapes = 'shapes.txt'
         self.txt_calendar = 'calendar.txt'
-
-        # load non-spatial data to pandas dataframes
-        self.df_agency = self.txt_to_df(self.txt_agency)
-        # self.df_calendar = self.txt_to_df(self.txt_calendar)
-        self.df_trips = self.txt_to_df(self.txt_trips)  
-        self.df_stoptimes = self.txt_to_df(self.txt_stoptimes) 
-
-        # load data with spatial attribs to geodataframes
-        self.gdf_stops = self.txt_to_df(self.txt_stops, f_lat=self.f_pt_lat, f_lon=self.f_pt_lon)
-        if self.use_shapestxt:
-            self.gdf_lineshps = self.make_lineshp_gdf()
         
         # shape.txt cols
         self.f_shapeid = 'shape_id'
@@ -52,10 +42,6 @@ class GTFSData(object):
         # agency.txt cols
         self.f_agencyid = 'agency_id'
         self.f_agencyname = 'agency_name'
-
-        # get agency name from GTFS file
-        self.agency = self.df_agency[self.f_agencyname][0] #agency name
-        self.agency_formatted = self.remove_forbidden_chars(self.agency)
         
         # route-level cols
         self.f_routeid = 'route_id'
@@ -97,6 +83,21 @@ class GTFSData(object):
         #SACOG's system: NAD_1983_StatePlane_California_II_FIPS_0402_Feet
         self.epsg_sacog = 2226
 
+        # load non-spatial data to pandas dataframes
+        self.df_agency = self.txt_to_df(self.txt_agency)
+        # self.df_calendar = self.txt_to_df(self.txt_calendar)
+        self.df_trips = self.txt_to_df(self.txt_trips)  
+        self.df_stoptimes = self.txt_to_df(self.txt_stoptimes) 
+
+        # load data with spatial attribs to geodataframes
+        self.gdf_stops = self.txt_to_df(self.txt_stops, f_lat=self.f_stoplat, f_lon=self.f_stoplon)
+        if self.use_shapestxt:
+            self.gdf_lineshps = self.make_lineshp_gdf()
+
+        # get agency name from GTFS file
+        self.agency = self.df_agency[self.f_agencyname][0] #agency name
+        self.agency_formatted = self.remove_forbidden_chars(self.agency)
+
         
     
     #=================DEFINE FUNCTIONS=================================
@@ -105,14 +106,15 @@ class GTFSData(object):
         df = pd.read_csv(in_txt, usecols=usecolumns)
 
         if f_lat and f_lon:
-            df = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df[self.stop_lon], df[self.stop_lat))
+            df = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df[f_lon], df[f_lat]))
 
         return df
 
     def make_lineshp_gdf(self):
-        gdf = self.txt_to_df(self.txt_shapes) # load all shape points to gdf
+        gdf = self.txt_to_df(self.txt_shapes, f_lat=self.f_pt_lat, f_lon=self.f_pt_lon) # load all shape points to gdf
         gdf = gdf.sort_values(by=[self.f_shapeid, self.f_pt_seq]) # sort by shape id and point sequence
 
+        # import pdb; pdb.set_trace()
         # convert shapepoints into lines, 1 line for each shape_id
         gdf = gdf.groupby(self.f_shapeid)[self.f_geom].apply(lambda x: LineString(x.tolist()))
 
@@ -135,4 +137,7 @@ class GTFSData(object):
 
 
 if __name__ == '__main__':
-    
+    data_dir = r'Q:\SACSIM23\Network\TransitNetwork\GTFS\Auburn'
+    os.chdir(data_dir)
+
+    gtfs = GTFSData(gtfs_dir=data_dir, data_year=2020)
