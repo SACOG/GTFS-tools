@@ -561,7 +561,7 @@ class MakeGTFSGISData(object):
 #=======================RUN FUNCTIONS======================================
 if __name__ == '__main__':
     # folder containing GTFS text files
-    gtfs_folder = r'Q:\SACSIM19\2020MTP\transit\Sidewalk Labs\OperatorData_SWL\YoloBus\2019_3Summer\yolocounty-ca-us_eff 7-1-2019'
+    gtfs_folder = r'Q:\SACSIM23\Network\TransitNetwork\GTFS\SRTD'
     # gtfs_folder = r'Q:\SACSIM19\2020MTP\transit\Sidewalk Labs\OperatorData_SWL\SRTD\2020_4Fall\google_transit'
     
     # ESRI file geodatabase you want output files to appear in
