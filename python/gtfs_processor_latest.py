@@ -561,15 +561,15 @@ class MakeGTFSGISData(object):
 #=======================RUN FUNCTIONS======================================
 if __name__ == '__main__':
     # folder containing GTFS text files
-    gtfs_folder = r'Q:\SACSIM23\Network\TransitNetwork\GTFS\SRTD'
+    gtfs_folder = r'C:\Users\dconly\Downloads\capitol_corridor'
     # gtfs_folder = r'Q:\SACSIM19\2020MTP\transit\Sidewalk Labs\OperatorData_SWL\SRTD\2020_4Fall\google_transit'
     
     # ESRI file geodatabase you want output files to appear in
-    gis_fgdb = r'Q:\SACSIM23\Network\SM23GIS\SM23Testing.gdb'
+    gis_fgdb = r'I:\Projects\Darren\HiFrequencyTransit\HiFrequencyTransit.gdb'
     
     # Year flag only used in output feature class and file names, not used for any calculations
     # No specific format needed, but be as concise as possible
-    year = 'Fall2020_2' 
+    year = 'CY2025' 
     
     # Parameters to determine what time of day you want to summarize service for
     # Enter as 'hh:mm:ss' using 24-hour time
@@ -579,7 +579,7 @@ if __name__ == '__main__':
     
     # instead of getting op data for specified period of day
     # This overrides the start_time and end_time variable values.
-    use_entire_day = False 
+    use_entire_day = True 
 
     # only applicable if outputting to GIS. Indicate if you want lines, stops, or both in outputs
     make_trip_shps = True # whether to make GIS lines for each trip shape
