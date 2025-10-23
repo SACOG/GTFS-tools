@@ -18,13 +18,12 @@ Updated by: <name>
 Copyright:   (c) SACOG
 Python Version: 3.x
 """
-import pdb
+from pathlib import Path
 import os
 import datetime as dt
 
 import arcpy
 import pandas as pd
-import numpy as np
 
 #===============================input info=============================
 
@@ -395,9 +394,6 @@ class MakeGTFSGISData(object):
         return df_shapes
         
                 
-        
-        
-        
     def fix_time_stamp(self, str_time_in):
         '''if time stamp hour is greater than 23, it fixes it so hours only
         range from zero to 23'''
@@ -464,13 +460,12 @@ class MakeGTFSGISData(object):
         ts_prd_end = ts_prd_end.time()
         
         # make stoptimes dataframe with specified columns
-        cols = [self.f_tripid, self.f_depart_time, self.f_arrive_time, self.f_stopseq]
-        df_1 = self.txt_to_df(self.txt_stoptimes, usecolumns=cols) 
+        cols_stoptimes = [self.f_tripid, self.f_depart_time, self.f_arrive_time, self.f_stopseq]
+        df_1 = self.txt_to_df(self.txt_stoptimes, usecolumns=cols_stoptimes) 
         
         # some RT time stamps have midnight hour as 24, not zero. this fixes it.
         for time_field in (self.f_depart_time, self.f_arrive_time):
             df_1[time_field] = df_1[time_field].apply(lambda x: self.fix_time_stamp(x))
-            
             
         # create columes where times formatted as times instead of strings
         df_1[f_tripstart] = pd.to_datetime(df_1[self.f_depart_time])
@@ -491,12 +486,14 @@ class MakeGTFSGISData(object):
         df_tripstarts = df_1.loc[df_1[self.f_stopseq] == first_stop]
         
         # add end point data to df of trip starts, resulting in table with trip id, trip start time, trip end time
-        cols = [self.f_tripid, f_tripstart]
-        df_startend = df_tripstarts[cols].merge(df_tripends, on=self.f_tripid)
+        cols_tstart = [self.f_tripid, f_tripstart]
+        df_startend = df_tripstarts[cols_tstart].merge(df_tripends, on=self.f_tripid)
         
         # get each trip's end-to-end travel time as time delta as float number
-        df_startend[f_trip_ttmins] = df_startend[f_tripstart] - df_startend[f_tripend] 
-        df_startend[f_trip_ttmins] = df_startend[f_trip_ttmins].dt.seconds/3600
+        # df_startend[f_trip_ttmins] = df_startend[f_tripstart] - df_startend[f_tripend] 
+        df_startend[f_trip_ttmins] = df_startend[f_tripend] - df_startend[f_tripstart] 
+        # df_startend[f_trip_ttmins] = df_startend[f_trip_ttmins].dt.seconds/3600 # converting seconds to minutes should be divide by 60, not 3600, right?
+        df_startend[f_trip_ttmins] = df_startend[f_trip_ttmins].dt.seconds/60
         
 
         # merges to tag route and trip data to each stop time
@@ -508,6 +505,9 @@ class MakeGTFSGISData(object):
         gbcols = [self.f_routeid, self.f_shapeid, self.f_tripdir, self.f_svc_id]
         out_cols = gbcols + [self.f_routesname, f_tripstart, f_trip_ttmins]
         
+        for c in gbcols: # cannot have null groupby values
+            df_merged[c] =  df_merged[c].fillna(-1)
+
         df_groupby = df_merged[out_cols].groupby(gbcols)
         
         #get count of trips and sum of travel time in period
@@ -561,8 +561,7 @@ class MakeGTFSGISData(object):
 #=======================RUN FUNCTIONS======================================
 if __name__ == '__main__':
     # folder containing GTFS text files
-    gtfs_folder = r'C:\Users\dconly\Downloads\capitol_corridor'
-    # gtfs_folder = r'Q:\SACSIM19\2020MTP\transit\Sidewalk Labs\OperatorData_SWL\SRTD\2020_4Fall\google_transit'
+    gtfs_folder = r'Q:\SACSIM23\Network\TransitNetwork\GTFS\Amtrak'
     
     # ESRI file geodatabase you want output files to appear in
     gis_fgdb = r'I:\Projects\Darren\HiFrequencyTransit\HiFrequencyTransit.gdb'
@@ -582,10 +581,11 @@ if __name__ == '__main__':
     use_entire_day = True 
 
     # only applicable if outputting to GIS. Indicate if you want lines, stops, or both in outputs
-    make_trip_shps = True # whether to make GIS lines for each trip shape
-    make_stop_pt_shps = True # whether to make GIS point file of operator's stop locations
+    make_trip_shps = False # whether to make GIS lines for each trip shape
+    make_stop_pt_shps = False # whether to make GIS point file of operator's stop locations
     
     #----------BEGIN SCRIPT-----------------
+    gtfs_folder = Path(gtfs_folder)
     
     if use_entire_day:
         start_time = '00:00:00' # starting at or after this time
@@ -594,8 +594,6 @@ if __name__ == '__main__':
     str_tstart = ''.join(start_time.split(':')[:2])
     str_tend = ''.join(end_time.split(':')[:2])
     f_prdprefix = "{}_{}".format(str_tstart, str_tend)
-    
-    opdir = os.path.dirname(gtfs_folder)
 
     output_type = input("choose output type (csv, gis): ")
     output_type = output_type.lower()
@@ -612,6 +610,6 @@ if __name__ == '__main__':
         print(f"Success! Results are in {gis_fgdb}")
     else:
         df = gtfso.get_prd_opdata(start_time, end_time, use_entire_day, groupby_attrs=['route_id', 'route_short_name', 'shape_id'])
-        out_csv = os.path.join(opdir,"gtfs_{}_opdata{}.csv".format(os.path.basename(opdir), f_prdprefix))
+        out_csv = gtfs_folder.parent.joinpath(f"gtfs_{gtfs_folder.name}_opdata{f_prdprefix}.csv")
         df.to_csv(out_csv, index=False)
         print(f"Success! Results are in {out_csv}")
